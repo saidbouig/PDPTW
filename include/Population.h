@@ -8,8 +8,16 @@
 
 class Population
 {
+static double memorized_fitness;
+    static int stable_fitness_limit_rounds ;
     public:
 
+        static double getMemorized_Fitness();//{ return memorized_fitness;}
+        static int getStable_Fitness_limit_rounds() ;//{ return stable_fitness_limit_rounds;}
+        static void setMemorized_Fitness(double fitness);//{ memorized_fitness = fitness; }
+        static void setStable_Fitness_limit_rounds( int fitness);//{ stable_fitness_limit_rounds= fitness;}
+
+        int countPenality(std::vector<std::vector<Course> > chromosome);
         std::vector<std::vector<std::vector<Course> > > pop;
         std::vector<double> fitness;
         double fitnessTot;
@@ -45,5 +53,7 @@ class Population
     protected:
     private:
 };
+
+
 
 #endif // POPULATION_H

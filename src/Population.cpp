@@ -123,6 +123,35 @@ bool Population::isValideChromosome(std::vector<std::vector<Course> > chromosome
     return true;
 }
 
+
+
+int Population::countPenality(std::vector<std::vector<Course> > chromosome){
+    int globalSize=0;
+    std::vector<Course> chromosomeList;
+    //Default penality == 1
+    int penality=1;
+
+    //Calculating sum of routes sizes of chromosome
+    for(int i=0 ; i < chromosome.size() ; i++)
+        globalSize+=chromosome.at(i).size();
+    //Transforming routes into a List
+    chromosomeList.reserve( globalSize ); // preallocate memory
+
+    for(int i=0 ; i < chromosome.size() ; i++)
+        chromosomeList.insert( chromosomeList.end(), chromosome.at(i).begin()+1, chromosome.at(i).end() );
+
+    for(int i=0 ; i<chromosomeList.size();i++){
+        for(int j=i+1 ;j<chromosomeList.size();j++){
+            if(chromosomeList.at(i).getId()==chromosomeList.at(j).getId())
+                //chromosomeList.erase(chromosomeList.begin()+j);
+                //if there is a duplicata add to penality
+                penality++;
+        }
+    }
+    return penality;
+}
+
+
 double Population::costGene(std::vector<Course> gene){
     double cost=0;
     if(gene.size()==0 || gene.size()==1) return 0;
@@ -151,8 +180,7 @@ int Population::vehiculeNumber(std::vector<std::vector<Course> > chromosome){
     return _vehiculeNumber;
 }
 double Population::fitnessChromosome( std::vector<std::vector<Course> > chromosome){
-    return 0.5*costChromosome(chromosome) + 0.3*vehiculeNumber(chromosome)+0.2 * isValideChromosome(chromosome);
-
+    return (0.5*costChromosome(chromosome) + 0.3*vehiculeNumber(chromosome)+0.2 * (1-isValideChromosome(chromosome)))*countPenality(chromosome);
 }
 
 
@@ -233,6 +261,15 @@ bool Population::ChromosomeEquals(std::vector<std::vector<Course> > a , std::vec
 
 }
 
+
+    int Population::stable_fitness_limit_rounds=1;
+    double Population::memorized_fitness=0;
+    double Population::getMemorized_Fitness(){ return memorized_fitness;}
+    int Population::getStable_Fitness_limit_rounds() { return stable_fitness_limit_rounds;}
+    void Population::setMemorized_Fitness(double fitness){ memorized_fitness = fitness; }
+    void Population::setStable_Fitness_limit_rounds( int fitness){ stable_fitness_limit_rounds= fitness;}
+
+
 std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(std::vector<Course> &courses)
 {
     Course c ;
@@ -260,7 +297,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
         cout<< fitness.at(i) <<" ";
         */
     Population::triPopulationASC(pop ,fitness);
-    cout<<"Best Fitness : " <<fitness.at(0)<<endl;
+    //cout<<"Best Fitness : " <<fitness.at(0)<<endl;
 
 
     /*cout<<"Apres Pop ! :"<<endl;
@@ -274,6 +311,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
 
     std::vector<std::vector<Course> > bestChromosome = pop.at(0);
     double BestFitness= fitness.at(0);
+    Population::setMemorized_Fitness(fitness.at(0));
 
 	for(int i=0 ; i<ITERATIONS ; i++){
             cout<<"Itération : "<<i<<" "<<endl;
@@ -304,7 +342,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
             cout<<"Selection "<<endl;
             //Trie :
             Population::triPopulationASC(newGeneration ,newGenerationFitness);
-            cout<<"New Generaton :: Best Fitness : " <<newGenerationFitness.at(0)<<endl;
+            //cout<<"New Generaton :: Best Fitness : " <<newGenerationFitness.at(0)<<endl;
 
             pop.clear();
             fitness.clear();
@@ -329,13 +367,22 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
                      pop.push_back(generatedChromosome);
                      fitt= fitnessChromosome(generatedChromosome);
                      fitness.push_back(fitt);
-
                 }
             }
 
             bestChromosome = pop.at(0);
-            cout<<"### The Best Fitness"<< fitness.at(0)<<endl;//+0.1*isValideGene(chromosome);
+            cout<<"### Fitness :"<< fitness.at(0)<<endl;//+0.1*isValideGene(chromosome);
             printChromosome(bestChromosome);
+
+            if (getStable_Fitness_limit_rounds()==9 ) break;
+            if (getStable_Fitness_limit_rounds()>3 && isValideChromosome(bestChromosome)) break;
+
+            if(fitness.at(0)==getMemorized_Fitness()) Population::setStable_Fitness_limit_rounds(getStable_Fitness_limit_rounds()+1);
+                else
+            {
+                setMemorized_Fitness(fitness.at(0)); setStable_Fitness_limit_rounds(1);
+            }
+
 
 
 	}
@@ -343,6 +390,8 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
 	return pop;
 
 }
+
+
 
 
 

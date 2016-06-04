@@ -66,7 +66,7 @@ void printChromosome(std::vector<std::vector<Course> > a) {
 int main()
 {
 	srand(time(NULL));
-	fstream instream("C:\\dataset\\AA30");
+	fstream instream("C:\\dataset\\AA45");
 	vector<Course> myCourses;
 	string line;
 	int id = 0, n, tmp, capacite, cpt = 0, TwStart = 0, TwEnd = 0, demand = 0;
@@ -93,6 +93,9 @@ int main()
 
 		}
 	}
+
+
+
 	Population population ;
 	population.generatePopulation(myCourses);
 
@@ -180,10 +183,10 @@ int main()
 //			std::cout << "Course: " << j<< ", Course: " << i << " " << myCourses.at(j).isCompatible(myCourses.at(i)) << endl;
 //		}
 //		std::cout << endl;
-    std::cout <<  myCourses.at(1).isCompatible(myCourses.at(31)) << endl;
+    //std::cout <<  myCourses.at(1).isCompatible(myCourses.at(31)) << endl;
 	int a;
 	std::cout << "\n\n\n Guess we finished xD, give me something in return :\n";
-	std::cin >> a;
+	//std::cin >> a;
 	std::cout << "See ya, you can have it back xD " << a << endl;
 }
 
