@@ -24,7 +24,7 @@ Population::~Population()
 
 void Population::printChromosome(std::vector<std::vector<Course> > a) {
 
-cout << "Chromosome: " << endl;
+cout << "Print Chromosome: " << endl;
 	for (int i = 0; i < a.size(); i++) {
 		for (int j = 0; j <a.at(i).size(); j++)
 		{
@@ -37,8 +37,8 @@ cout << "Chromosome: " << endl;
 
 std::vector<std::vector<Course> > Population::crossOverChromosome(std::vector<std::vector<Course> >  dad, std::vector<std::vector<Course> > mum) {
 
-	int min = (dad.size() >= mum.size()) ? mum.size() : dad.size();
-	int max = (dad.size() <= mum.size()) ? mum.size() : dad.size();
+	int min_ = (dad.size() > mum.size()) ? mum.size() : dad.size();
+	int max_ = (dad.size() <= mum.size()) ? mum.size() : dad.size();
 	//Resulted Chromosome
 	std::vector<std::vector<Course> > child;
 
@@ -46,20 +46,33 @@ std::vector<std::vector<Course> > Population::crossOverChromosome(std::vector<st
 	//srand(time(NULL));
 
 	//randomint has value between 0 and min-1
-	int randomint = ((rand() % min)-1) + 1;
+	int randomint = (rand() % min_-1) + 1;
 
 	//copying the 1st half of a into c
 
 	//std::cout << "Before\nn";
+    std::vector<Course> tmp;
 
 	for (int i = 0; i <= randomint; i++) {
-		std::vector<Course> tmp(dad.at(i));
-		child.push_back(tmp);
+            //cout<<"boocle 1 "<<i<< " "<<endl;
+		if(dad.size()==min_)
+            child.push_back(dad.at(i));
+            //std::vector<Course> tmp(dad.at(i));
+        else
+            child.push_back(mum.at(i));
+
+
+            //std::vector<Course> tmp(mum.at(i));
+
 	}
 	//std::cout << "After the first\n";
-	for (int i = randomint + 1; i < max; i++) {
-		std::vector<Course> tmp(mum.at(i));
-		child.push_back(tmp);
+	for (int i = randomint + 1; i < max_; i++) {
+	    //cout<<"boocle2 "<<i<< "min: "<<min_<<", max: "<<max_ <<endl;
+	    if(dad.size()==min_)
+            child.push_back(mum.at(i));
+        else
+            child.push_back(dad.at(i));
+
 	}
 	//cout << "CrossOver chromosome :" << endl;
 	//cout << "mid ind : " <<randomint << endl;
@@ -75,26 +88,42 @@ std::vector<std::vector<Course> > Population::mutateChromosome(std::vector<std::
 
 	//Choosing two random vehicules, from the chromosome
 
-	int tournee1 = (rand() % chromosome.size()) ;
-	int tournee2 = (rand() % chromosome.size()) ;
+	int tournee1 ;
+	//do{
+        tournee1= (rand() % chromosome.size()) ;
+        //cout<<"tournée 1 "<< tournee1<<endl;
+	//}while(chromosome.at(tournee1).size()==1);
+
+	int tournee2;
+	//do{
+        tournee2= (rand() % chromosome.size()) ;
+        //cout<<"tournée 2 "<< tournee2<<endl;
+
+	//}while(chromosome.at(tournee2).size()==1);
+
 	int course1, course2;
 
 	//Choosing a random node -might be a pickup or a delivery one-, other than the depot
 	do {
 		course1 = (rand() % chromosome.at(tournee1).size()-1) + 1;
 
-	} while (!course1 );
+	} while ( (!course1) || course1%2 ==0);
 	//Same thing, choosing a random node
 	do {
 
 		course2 = (rand() % chromosome.at(tournee2).size()-1) + 1;
-	} while (!course2);
+	} while ((!course2) ||  course2%2 ==0);
 
 	//cout << "Mutate chromosome :" << endl;
 	//cout << "Tournée : " << tournee1 << " Course : " << course1 << " With Tournée : " << tournee2 << " Course :" << course2 << endl;
 	Course tmp = mutatedChromosome.at(tournee1).at(course1);
+	Course tmp2= mutatedChromosome.at(tournee1).at(course1+1);
 	mutatedChromosome.at(tournee1).at(course1) = mutatedChromosome.at(tournee2).at(course2);
+    mutatedChromosome.at(tournee1).at(course1+1) = mutatedChromosome.at(tournee2).at(course2+1);
+
 	mutatedChromosome.at(tournee2).at(course2) = tmp;
+    mutatedChromosome.at(tournee2).at(course2+1) = tmp2;
+
 	//cout << "end mutate\n";
 
 	return mutatedChromosome;
@@ -156,6 +185,7 @@ double Population::costGene(std::vector<Course> gene){
     double cost=0;
     if(gene.size()==0 || gene.size()==1) return 0;
 
+    #pragma omp parallel for private (i)
     for(int i=0; i<gene.size()-1;i++)
         cost+=gene.at(i).getDistance(gene.at(i+1));
 
@@ -167,6 +197,7 @@ double Population::costChromosome(std::vector<std::vector<Course> > chromosome){
     double cost=0;
     if(chromosome.size()==0) return 0;
 
+    #pragma omp parallel for private (i)
     for(int i=0; i<chromosome.size();i++)
         cost+=costGene(chromosome.at(i));
     return cost;
@@ -180,7 +211,7 @@ int Population::vehiculeNumber(std::vector<std::vector<Course> > chromosome){
     return _vehiculeNumber;
 }
 double Population::fitnessChromosome( std::vector<std::vector<Course> > chromosome){
-    return (0.5*costChromosome(chromosome) + 0.3*vehiculeNumber(chromosome)+0.2 * (1-isValideChromosome(chromosome)))*countPenality(chromosome);
+    return (0.3*costChromosome(chromosome) + 0.2*vehiculeNumber(chromosome)+0.5 *isValideChromosome(chromosome))*countPenality(chromosome);
 }
 
 
@@ -233,6 +264,7 @@ std::vector<std::vector<Course> > Population::generateChromosome(std::vector<Cou
 		//std::cout <<"\n\npushing the "<< tmp.size()<<"ReLooping\n\n";
 		chromosome.push_back(tmp);
 	}
+
 	for (unsigned int i = 0; i < chromosome.size(); i++) {
 		if (chromosome.at(i).size() != 1)
 			chromosome1.push_back(chromosome.at(i));
@@ -272,6 +304,8 @@ bool Population::ChromosomeEquals(std::vector<std::vector<Course> > a , std::vec
 
 std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(std::vector<Course> &courses)
 {
+
+
     Course c ;
     std::vector<std::vector<std::vector<Course> > > pop;
     std::vector<double> fitness;
@@ -280,6 +314,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
     std::vector<std::vector<Course> > generatedChromosome;
 
 	for (unsigned int j = 0; j < MAX_SIZE_POP; j++) {
+          /*test*/  //cout<<"here" << j<< endl;
         ///we can calculate fitness of each Chromosome  +  avg fitness of the population here too !
         generatedChromosome= Population::generateChromosome(courses);
 
@@ -291,11 +326,13 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
         generatedChromosome.clear();
 	}
 
-    /*cout<<"Avant Pop ! :"<<endl;
+    //cout<<"Avant Pop ! :"<<endl;
+
+    /*View Fitness of First Generation*/
 
 	for(int i=0 ; i<fitness.size();i++)
         cout<< fitness.at(i) <<" ";
-        */
+
     Population::triPopulationASC(pop ,fitness);
     //cout<<"Best Fitness : " <<fitness.at(0)<<endl;
 
@@ -313,27 +350,41 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
     double BestFitness= fitness.at(0);
     Population::setMemorized_Fitness(fitness.at(0));
 
-	for(int i=0 ; i<ITERATIONS ; i++){
-            cout<<"Itération : "<<i<<" "<<endl;
+	for(int p=0 ; p<ITERATIONS ; p++){
+            cout<<"Itération : "<<p<<" "<<endl;
             //cout<<"Crossover "<<endl;
             ///CrossOver
             for(int i=0 ; i < pop.size(); i++){
                 for(int j=0 ; j<pop.size();j++){
-                        generatedChromosome.clear();
+                    //cout<<"test "<<i << "* "<<j<<endl;
                     if(i!=j){
-                        generatedChromosome = Population::crossOverChromosome(pop.at(i),pop.at(j));
+
+                        //cout<<"E";
+                        generatedChromosome = Population::crossOverChromosome(pop.at(j),pop.at(i));
+                        ///TEST
+                        //printChromosome(generatedChromosome);
+                        //cout<<"F";
                         newGeneration.push_back(generatedChromosome);
+                        //cout<<"G";
                         newGenerationFitness.push_back(fitnessChromosome(generatedChromosome));
+                        //cout<<"H";
                     }
                 }
             }
             cout<<"Mutation "<<endl;
             ///Mutation
-            for(int i=0 ; i<pop.size();i++){
+            //cout<<" # "<<pop.size()<<" Population Size "<<endl;
+            for(int i=0 ; i<pop.size()-1;i++){
+                    //cout<<"what + "<<i<<":"<<endl;
                 newGeneration.push_back(pop.at(i));
+                //cout<<"a";
                 newGenerationFitness.push_back(fitness.at(i));
+                //cout<<"b";
                 generatedChromosome = Population::mutateChromosome(pop.at(i));
+                //cout<<"c";
+
                 newGeneration.push_back(generatedChromosome);
+                //cout<<"d";
                 newGenerationFitness.push_back(fitnessChromosome(generatedChromosome));
 
             }
@@ -347,6 +398,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
             pop.clear();
             fitness.clear();
             double fitt;
+
             for(int i=0;i<newGeneration.size() && (pop.size()<MAX_SIZE_POP);i++){
                 pop.push_back(newGeneration.at(i));
                 fitness.push_back(newGenerationFitness.at(i));
@@ -362,6 +414,7 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
                 pop.push_back(bestChromosome);
                 std::vector<std::vector<Course> > generatedChromosome ;
                 double fitt;
+
                 for(int i=0 ; i<MAX_SIZE_POP -1 ; i++){
                      generatedChromosome =Population::generateChromosome(courses);
                      pop.push_back(generatedChromosome);
@@ -373,8 +426,9 @@ std::vector<std::vector<std::vector<Course> > > Population::generatePopulation(s
             bestChromosome = pop.at(0);
             cout<<"### Fitness :"<< fitness.at(0)<<endl;//+0.1*isValideGene(chromosome);
             printChromosome(bestChromosome);
+            cout<<"isValide Chromosome : " << isValideChromosome(bestChromosome)<<endl;
 
-            if (getStable_Fitness_limit_rounds()==9 ) break;
+            //if (getStable_Fitness_limit_rounds()==9 ) break;
             if (getStable_Fitness_limit_rounds()>3 && isValideChromosome(bestChromosome)) break;
 
             if(fitness.at(0)==getMemorized_Fitness()) Population::setStable_Fitness_limit_rounds(getStable_Fitness_limit_rounds()+1);

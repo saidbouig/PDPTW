@@ -4,7 +4,7 @@
 #include<vector>
 #include"Course.h"
 #define MAX_SIZE_POP 10
-#define ITERATIONS 1000
+#define ITERATIONS 5
 
 class Population
 {
